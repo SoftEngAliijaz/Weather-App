@@ -26,11 +26,12 @@
           <div>
             <input
               type="text"
-              id="city"
+              id="cityInput"
               placeholder="Enter City Name"
               class="flex-grow p-2 w-full border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500 mb-5"
             />
             <button
+              onclick="getWeatherByCity()"
               class="bg-blue-600 w-full text-white px-4 py-2 rounded-r hover:bg-blue-700"
             >
               Search
@@ -42,6 +43,7 @@
           </div>
 
           <button
+            onclick="getWeatherByLocation()"
             class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
           >
             Use Current Location
@@ -51,62 +53,193 @@
         <!-- Right Div -->
         <div class="bg-white w-full p-6 rounded-lg shadow">
           <!-- Current Weather -->
-          <div class="mb-6">
-            <h2 class="text-lg font-semibold">London (2023-06-19)</h2>
-            <p>Temperature: 18.71°C</p>
-            <p>Wind: 4.31 M/S</p>
-            <p>Humidity: 76%</p>
+          <div class="mb-6" id="current-weather">
+            <h2 class="text-lg font-semibold" id="location">
+              Loading weather data...
+            </h2>
+            <p id="temperature">Temperature: --°C</p>
+            <p id="wind">Wind: -- M/S</p>
+            <p id="humidity">Humidity: --%</p>
           </div>
 
           <!-- Weather Condition -->
           <div class="mb-6">
-            <p class="font-medium">Moderate rain</p>
+            <p class="font-medium" id="weather-condition">--</p>
           </div>
 
           <!-- 4-Day Forecast -->
-          <div>
+          <div id="forecast-container">
             <h2 class="text-lg font-semibold mb-2">4-Day Forecast</h2>
-
-            <div class="flex flex-col md:flex-row gap-2 text-center">
-              <div
-                class="w-full min-h-[200px] md:min-h-[150px] border rounded-lg flex flex-col justify-evenly p-5 shadow-lg"
-              >
-                <p class="font-medium">(2023-06-20)</p>
-                <p>Temp: 17.64°C</p>
-                <p>Wind: 0.73 M/S</p>
-                <p>Humidity: 70%</p>
-              </div>
-
-              <div
-                class="w-full min-h-[200px] md:min-h-[150px] border rounded-lg flex flex-col justify-evenly p-5 shadow-lg"
-              >
-                <p class="font-medium">(2023-06-20)</p>
-                <p>Temp: 16.78°C</p>
-                <p>Wind: 2.72 M/S</p>
-                <p>Humidity: 83%</p>
-              </div>
-
-              <div
-                class="w-full min-h-[200px] md:min-h-[150px] border rounded-lg flex flex-col justify-evenly p-5 shadow-lg"
-              >
-                <p class="font-medium">(2023-06-21)</p>
-                <p>Temp: 18.20°C</p>
-                <p>Wind: 1.49 M/S</p>
-                <p>Humidity: 72%</p>
-              </div>
-
-              <div
-                class="w-full min-h-[200px] md:min-h-[150px] border rounded-lg flex flex-col justify-evenly p-5 shadow-lg"
-              >
-                <p class="font-medium">(2023-06-23)</p>
-                <p>Temp: 17.08°C</p>
-                <p>Wind: 0.9 M/S</p>
-                <p>Humidity: 89%</p>
-              </div>
+            <div
+              class="flex flex-col md:flex-row gap-2 text-center"
+              id="forecast-cards"
+            >
+              <!-- Forecast cards will be inserted here by JavaScript -->
             </div>
           </div>
         </div>
       </div>
     </main>
+    <!-- Script -->
+    <script>
+      // API Key - Replace with your own OpenWeatherMap API key
+      const API_KEY = "68526a92a8913622ab2b882cedd25cb8";
+
+      // DOM Elements
+      const cityInput = document.getElementById("cityInput");
+      const locationElement = document.getElementById("location");
+      const temperatureElement = document.getElementById("temperature");
+      const windElement = document.getElementById("wind");
+      const humidityElement = document.getElementById("humidity");
+      const weatherConditionElement =
+        document.getElementById("weather-condition");
+      const forecastContainer = document.getElementById("forecast-cards");
+
+      // Get weather by city name
+      async function getWeatherByCity() {
+        const city = cityInput.value.trim();
+        if (!city) {
+          alert("Please enter a city name");
+          return;
+        }
+
+        try {
+          // Get current weather
+          const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`;
+          const currentResponse = await fetch(currentWeatherUrl);
+          const currentData = await currentResponse.json();
+
+          if (currentData.cod !== 200) {
+            throw new Error(currentData.message);
+          }
+
+          updateCurrentWeather(currentData);
+
+          // Get forecast (5-day forecast with 3-hour intervals)
+          const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${API_KEY}`;
+          const forecastResponse = await fetch(forecastUrl);
+          const forecastData = await forecastResponse.json();
+
+          updateForecast(forecastData);
+        } catch (error) {
+          alert(`Error: ${error.message}`);
+          console.error(error);
+        }
+      }
+
+      // Get weather by current location
+      function getWeatherByLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+
+              try {
+                // Get current weather
+                const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`;
+                const currentResponse = await fetch(currentWeatherUrl);
+                const currentData = await currentResponse.json();
+
+                updateCurrentWeather(currentData);
+
+                // Get forecast
+                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`;
+                const forecastResponse = await fetch(forecastUrl);
+                const forecastData = await forecastResponse.json();
+
+                updateForecast(forecastData);
+              } catch (error) {
+                alert(`Error: ${error.message}`);
+                console.error(error);
+              }
+            },
+            (error) => {
+              alert(`Geolocation error: ${error.message}`);
+            }
+          );
+        } else {
+          alert("Geolocation is not supported by your browser");
+        }
+      }
+
+      // Update current weather display
+      function updateCurrentWeather(data) {
+        const date = new Date(data.dt * 1000).toISOString().split("T")[0];
+        locationElement.textContent = `${data.name} (${date})`;
+        temperatureElement.textContent = `Temperature: ${data.main.temp.toFixed(
+          1
+        )}°C`;
+        windElement.textContent = `Wind: ${data.wind.speed.toFixed(1)} M/S`;
+        humidityElement.textContent = `Humidity: ${data.main.humidity}%`;
+        weatherConditionElement.textContent = data.weather[0].description;
+      }
+
+      // Update forecast display
+      function updateForecast(data) {
+        // Clear previous forecast
+        forecastContainer.innerHTML = "";
+
+        // We'll use forecasts at 12:00 PM each day for simplicity
+        const dailyForecasts = [];
+
+        // Group forecasts by day
+        const forecastsByDay = {};
+        data.list.forEach((forecast) => {
+          const date = new Date(forecast.dt * 1000).toISOString().split("T")[0];
+          if (!forecastsByDay[date]) {
+            forecastsByDay[date] = [];
+          }
+          forecastsByDay[date].push(forecast);
+        });
+
+        // Get one forecast per day (skip today)
+        const today = new Date().toISOString().split("T")[0];
+        let dayCount = 0;
+
+        for (const date in forecastsByDay) {
+          if (date !== today && dayCount < 4) {
+            // Use the midday forecast if available, otherwise use the first one
+            const middayForecast =
+              forecastsByDay[date].find((f) => {
+                const hour = new Date(f.dt * 1000).getHours();
+                return hour >= 11 && hour <= 13;
+              }) || forecastsByDay[date][0];
+
+            dailyForecasts.push(middayForecast);
+            dayCount++;
+          }
+        }
+
+        // Create forecast cards
+        dailyForecasts.forEach((forecast) => {
+          const date = new Date(forecast.dt * 1000).toISOString().split("T")[0];
+          const formattedDate = new Date(forecast.dt * 1000).toLocaleDateString(
+            "en-US",
+            {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            }
+          );
+
+          const card = document.createElement("div");
+          card.className =
+            "w-full min-h-[200px] md:min-h-[150px] border rounded-lg flex flex-col justify-evenly p-5 shadow-lg";
+          card.innerHTML = `
+               <p class="font-medium">(${formattedDate})</p>
+               <p>Temp: ${forecast.main.temp.toFixed(1)}°C</p>
+               <p>Wind: ${forecast.wind.speed.toFixed(1)} M/S</p>
+               <p>Humidity: ${forecast.main.humidity}%</p>
+             `;
+
+          forecastContainer.appendChild(card);
+        });
+      }
+
+      // Initialize with default city
+      window.onload = function () {
+        getWeatherByCity("Sahiwal");
+      };
+    </script>
   </body>
 </html>

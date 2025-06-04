@@ -10,48 +10,37 @@
   <body class="bg-gray-100">
     <!-- Header -->
     <header>
-      <div class="bg-blue-600 text-center p-5 text-white font-bold text-xl">
+      <div class="p-5 text-xl font-bold text-center text-white bg-blue-600">
         Weather Dashboard
       </div>
     </header>
 
-    <main class="container mx-auto p-4">
-      <!-- Main Div Containing Left & Right Div -->
-      <div class="flex flex-col lg:min-h-auto lg:flex-row justify-evenly gap-5">
-        <!-- Left Div -->
-        <div class="bg-white w-auto p-6 rounded-lg shadow">
-          <h2 class="text-lg font-semibold mb-4">Enter a City Name</h2>
-          <p class="text-gray-500 mb-4">E.g., New York, London, Tokyo</p>
+    <main class="container p-4 mx-auto">
+      <!-- Main Content -->
+      <div class="flex flex-col gap-5 lg:flex-row justify-evenly">
+        <!-- Left Section -->
+        <div class="w-auto p-6 bg-white rounded-lg shadow">
+          <h2 class="mb-4 text-lg font-semibold">Enter a City Name</h2>
+          <p class="mb-4 text-gray-500">E.g., New York, London, Tokyo</p>
 
           <div>
             <input
               type="text"
               id="cityInput"
               placeholder="Enter City Name"
-              class="flex-grow p-2 w-full border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500 mb-5"
+              class="w-full p-2 mb-5 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               onclick="getWeatherByCity()"
-              class="bg-blue-600 w-full text-white px-4 py-2 rounded-r hover:bg-blue-700"
+              class="w-full px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
             >
               Search
             </button>
           </div>
-
-          <div class="divider">
-            <span class="divider-text">or</span>
-          </div>
-
-          <button
-            onclick="getWeatherByLocation()"
-            class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
-          >
-            Use Current Location
-          </button>
         </div>
 
-        <!-- Right Div -->
-        <div class="bg-white w-full p-6 rounded-lg shadow">
+        <!-- Right Section -->
+        <div class="w-full p-6 bg-white rounded-lg shadow">
           <!-- Current Weather -->
           <div class="mb-6" id="current-weather">
             <h2 class="text-lg font-semibold" id="location">
@@ -67,179 +56,17 @@
             <p class="font-medium" id="weather-condition">--</p>
           </div>
 
-          <!-- 4-Day Forecast -->
+          <!-- Forecast -->
           <div id="forecast-container">
-            <h2 class="text-lg font-semibold mb-2">4-Day Forecast</h2>
+            <h2 class="mb-2 text-lg font-semibold">4-Day Forecast</h2>
             <div
-              class="flex flex-col md:flex-row gap-2 text-center"
+              class="flex flex-col gap-2 text-center md:flex-row"
               id="forecast-cards"
-            >
-              <!-- Forecast cards will be inserted here by JavaScript -->
-            </div>
+            ></div>
           </div>
         </div>
       </div>
     </main>
-    <!-- Script -->
-    <script>
-      // API Key - Replace with your own OpenWeatherMap API key
-      const API_KEY = "68526a92a8913622ab2b882cedd25cb8";
-
-      // DOM Elements
-      const cityInput = document.getElementById("cityInput");
-      const locationElement = document.getElementById("location");
-      const temperatureElement = document.getElementById("temperature");
-      const windElement = document.getElementById("wind");
-      const humidityElement = document.getElementById("humidity");
-      const weatherConditionElement =
-        document.getElementById("weather-condition");
-      const forecastContainer = document.getElementById("forecast-cards");
-
-      // Get weather by city name
-      async function getWeatherByCity() {
-        const city = cityInput.value.trim();
-        if (!city) {
-          alert("Please enter a city name");
-          return;
-        }
-
-        try {
-          // Get current weather
-          const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${API_KEY}`;
-          const currentResponse = await fetch(currentWeatherUrl);
-          const currentData = await currentResponse.json();
-
-          if (currentData.cod !== 200) {
-            throw new Error(currentData.message);
-          }
-
-          updateCurrentWeather(currentData);
-
-          // Get forecast (5-day forecast with 3-hour intervals)
-          const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${API_KEY}`;
-          const forecastResponse = await fetch(forecastUrl);
-          const forecastData = await forecastResponse.json();
-
-          updateForecast(forecastData);
-        } catch (error) {
-          alert(`Error: ${error.message}`);
-          console.error(error);
-        }
-      }
-
-      // Get weather by current location
-      function getWeatherByLocation() {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              const { latitude, longitude } = position.coords;
-
-              try {
-                // Get current weather
-                const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`;
-                const currentResponse = await fetch(currentWeatherUrl);
-                const currentData = await currentResponse.json();
-
-                updateCurrentWeather(currentData);
-
-                // Get forecast
-                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&units=metric&appid=${API_KEY}`;
-                const forecastResponse = await fetch(forecastUrl);
-                const forecastData = await forecastResponse.json();
-
-                updateForecast(forecastData);
-              } catch (error) {
-                alert(`Error: ${error.message}`);
-                console.error(error);
-              }
-            },
-            (error) => {
-              alert(`Geolocation error: ${error.message}`);
-            }
-          );
-        } else {
-          alert("Geolocation is not supported by your browser");
-        }
-      }
-
-      // Update current weather display
-      function updateCurrentWeather(data) {
-        const date = new Date(data.dt * 1000).toISOString().split("T")[0];
-        locationElement.textContent = `${data.name} (${date})`;
-        temperatureElement.textContent = `Temperature: ${data.main.temp.toFixed(
-          1
-        )}°C`;
-        windElement.textContent = `Wind: ${data.wind.speed.toFixed(1)} M/S`;
-        humidityElement.textContent = `Humidity: ${data.main.humidity}%`;
-        weatherConditionElement.textContent = data.weather[0].description;
-      }
-
-      // Update forecast display
-      function updateForecast(data) {
-        // Clear previous forecast
-        forecastContainer.innerHTML = "";
-
-        // We'll use forecasts at 12:00 PM each day for simplicity
-        const dailyForecasts = [];
-
-        // Group forecasts by day
-        const forecastsByDay = {};
-        data.list.forEach((forecast) => {
-          const date = new Date(forecast.dt * 1000).toISOString().split("T")[0];
-          if (!forecastsByDay[date]) {
-            forecastsByDay[date] = [];
-          }
-          forecastsByDay[date].push(forecast);
-        });
-
-        // Get one forecast per day (skip today)
-        const today = new Date().toISOString().split("T")[0];
-        let dayCount = 0;
-
-        for (const date in forecastsByDay) {
-          if (date !== today && dayCount < 4) {
-            // Use the midday forecast if available, otherwise use the first one
-            const middayForecast =
-              forecastsByDay[date].find((f) => {
-                const hour = new Date(f.dt * 1000).getHours();
-                return hour >= 11 && hour <= 13;
-              }) || forecastsByDay[date][0];
-
-            dailyForecasts.push(middayForecast);
-            dayCount++;
-          }
-        }
-
-        // Create forecast cards
-        dailyForecasts.forEach((forecast) => {
-          const date = new Date(forecast.dt * 1000).toISOString().split("T")[0];
-          const formattedDate = new Date(forecast.dt * 1000).toLocaleDateString(
-            "en-US",
-            {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            }
-          );
-
-          const card = document.createElement("div");
-          card.className =
-            "w-full min-h-[200px] md:min-h-[150px] border rounded-lg flex flex-col justify-evenly p-5 shadow-lg";
-          card.innerHTML = `
-               <p class="font-medium">(${formattedDate})</p>
-               <p>Temp: ${forecast.main.temp.toFixed(1)}°C</p>
-               <p>Wind: ${forecast.wind.speed.toFixed(1)} M/S</p>
-               <p>Humidity: ${forecast.main.humidity}%</p>
-             `;
-
-          forecastContainer.appendChild(card);
-        });
-      }
-
-      // Initialize with default city
-      window.onload = function () {
-        getWeatherByCity("Sahiwal");
-      };
-    </script>
+    <script src="./script.js"></script>
   </body>
 </html>
